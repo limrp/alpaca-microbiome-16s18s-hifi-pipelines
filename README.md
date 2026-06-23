@@ -4,7 +4,7 @@
 
 ## Workflow
 
-![Workflow](./imgs/ChatGPT_Image_June_23_2026_12_38_10AM_edited.png)
+![Workflow](./imgs/ChatGPT_Image_Jun22_2026_12_23_10PM.png)
 
 ## Execution methods
 
