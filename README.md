@@ -18,6 +18,10 @@
 
 ![Workflow](./imgs/ChatGPTImageJun24_2026_11_38_19PM.png)
 
+## Workflow
+
+![Workflow](./imgs/ChatGPTImageJun25_2026_08_17_22PM.png)
+
 ## Execution methods
 
 QC-only:
