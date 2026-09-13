@@ -2,13 +2,14 @@
 
 nextflow.enable.dsl=2
 
-include { validateParameters } from 'plugin/nf-schema'
+include { validateParameters; paramsSummaryLog } from 'plugin/nf-schema'
 
 workflow {
 
   // 1. Validate parameters
   validateParameters()
-  
+  log.info paramsSummaryLog(workflow) 
+
   // Routing to a determined workflow using mode parameter
 
   if (params.mode == "benchmarking") {
