@@ -2,8 +2,13 @@
 
 nextflow.enable.dsl=2
 
+include { validateParameters } from 'plugin/nf-schema'
+
 workflow {
 
+  // 1. Validate parameters
+  validateParameters()
+  
   // Routing to a determined workflow using mode parameter
 
   if (params.mode == "benchmarking") {
@@ -13,9 +18,9 @@ workflow {
         Comparing inference methods and databases
         =========================================
     """
-
     // Later add WORKFLOW:
     // BENCHMARKING()
+
   } else if (params.mode == "recommended") {
     log.info """
         ========================================
@@ -23,10 +28,9 @@ workflow {
         Running the selected analysis strategy
         ========================================
     """
-
     // Later add WORKFLOW:
     // RECOMMENDED()
-    
+
   } else {
     error """
     Invalid mode: ${params.mode}.

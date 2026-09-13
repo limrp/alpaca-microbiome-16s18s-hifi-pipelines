@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Alpaca amplicon benchmark - test schema",
+  "description": "Minimal nf-schema configuration for testing thesis input validation.",
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [
+        "benchmarking",
+        "recommended"
+      ],
+      "default": "benchmarking",
+      "description": "Top-level workflow mode for this thesis."
+    },
+    "input": {
+      "type": "string",
+      "format": "file-path",
+      "exists": true,
+      "pattern": "^\\S+\\.(tsv|csv)$",
+      "description": "Sequencing samplesheet with fastq paths."
+    }
+  },
+
+  "required": [
+    "mode",
+    "input"
+  ]
+}
