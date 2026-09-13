@@ -1,0 +1,2 @@
+sample	dataset_type	marker	fastq
+sim16_01	simulated	16S	test_inputs/reads/sim16_01.fastq.gz
