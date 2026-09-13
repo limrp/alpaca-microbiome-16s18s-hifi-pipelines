@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Thesis sequencing samplesheet",
+  "description": "Sequencing inputs for simulated and biological PacBio HiFi amplicon datasets.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "sample": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*$",
+        "errorMessage": "sample must start with a letter and contain only letters, numbers, or underscores",
+        "meta": ["id"]
+      },
+      "dataset_type": {
+        "type": "string",
+        "enum": ["simulated", "biological"],
+        "errorMessage": "dataset_type must be simulated or biological",
+        "meta": ["dataset_type"]
+      },
+      "marker": {
+        "type": "string",
+        "enum": ["16S", "18S"],
+        "errorMessage": "marker must be 16S or 18S",
+        "meta": ["marker"]
+      },
+      "fastq": {
+        "type": "string",
+        "format": "file-path",
+        "exists": true,
+        "pattern": "^\\S+\\.f(ast)?q\\.gz$",
+        "errorMessage": "fastq must point to an existing .fq.gz or .fastq.gz file with no spaces"
+      }
+    },
+    "required": ["sample", "dataset_type", "marker", "fastq"],
+    "additionalProperties": false
+  },
+  "allOf": [
+    { "uniqueEntries": ["sample"] }
+  ]
+}
