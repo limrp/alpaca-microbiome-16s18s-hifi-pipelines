@@ -11,11 +11,12 @@ workflow {
   // Create a nice summary of the Launch settings (parameters, file paths, etc)
   log.info paramsSummaryLog(workflow) 
   
-  // 2. Parse input samplesheet -> [meta, fastq]
+  // 2. Validate and Parse input samplesheet -> [meta, fastq]
   ch_samples = Channel
-      .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_samplesheet.json"))
-      // .view { "After Channel.fromList(samplesheetToList(,)): ${it}"}
-      .map { meta, fastq -> println "meta map: ${meta}\nfastq: ${fastq}\n"}
+      // .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_samplesheet.json"))
+      .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_samplesheet_new_contract_2.json"))
+      .view { "After Channel.fromList(samplesheetToList(,)): ${it}"}
+      // .map { meta, fastq -> println "meta map: ${meta}\nfastq: ${fastq}\n"}
 
   // Routing to a determined workflow using mode parameter
   if (params.mode == "benchmarking") {
