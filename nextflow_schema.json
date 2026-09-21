@@ -19,6 +19,11 @@
       "exists": true,
       "pattern": "^\\S+\\.(tsv|csv)$",
       "description": "Sequencing samplesheet with fastq paths."
+    },
+    "outdir": {
+      "type": "string",
+      "default": "results",
+      "description": "Directory where pipeline results will be written."
     }
   },
 

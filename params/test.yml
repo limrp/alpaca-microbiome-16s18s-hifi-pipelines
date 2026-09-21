@@ -1,0 +1,3 @@
+mode: benchmarking
+input: test_inputs/samplesheet.tsv
+outdir: results/test

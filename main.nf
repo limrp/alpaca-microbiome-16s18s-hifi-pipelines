@@ -14,7 +14,6 @@ workflow {
     // 2. Validate and Parse input samplesheet -> [meta, fastq]
     ch_samples = Channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_samplesheet.json"))
-        // .view {"After .fromList(samplesheetToList: ${it}"}
     
     ch_samples_with_batch_key = ch_samples
         .map { meta, fastq -> 
@@ -27,33 +26,17 @@ workflow {
 
             [batch_key, meta, fastq]
         }
-        // .view {"Contents after creating batch key [batch_key, meta_map, fastq]: ${it}"} // Also works
-        // .view { batch_key, meta, fastq -> "Before grouping: batch = ${batch_key} | sample = ${meta.id} | fastq = ${fastq.name}"  } // Also works
-    // ch_samples_with_batch_key.view { batch_key, meta, fastq -> "Before grouping: batch = ${batch_key} | sample = ${meta.id} | fastq = ${fastq.name}" }
 
     // Create batches by grouping the samples using .groupTuple()
     ch_batches = ch_samples_with_batch_key
         .groupTuple() // by default groupTuple() groups using the first element of each tuple
-    //ch_batches.view { "After grouping: ${it}\n" } // worked well to see the raw contents of the channel after grouping
-    // ch_batches.view { batch_key, metas, fastqs -> 
-    //     // Collect in a list all the ids of the samples of each batch
-    //     def sample_ids = metas.collect { meta -> meta.id }
-    //     // View the batches in a nicer and summarized way
-    //     "BATCH: dataset_id = ${batch_key.dataset_id} | marker = ${batch_key.marker} | n = ${sample_ids.size()} | samples = ${sample_ids.join(', ')} "
-    // }
 
-    // Validation of grouped batches
+    // Validation of grouped batches -> asks: "Is this batch valid?"
     ch_valid_batches = ch_batches.map { batch_key, metas, fastqs ->
         
         // Used right now for validation
         def origins  = metas.collect { meta -> meta.data_origin }.unique()
         def branches = metas.collect { meta -> meta.workflow_branch }.unique()
-
-        // These two summaries are not currently used by the validation itself.
-        // They are local to this map closure and are not emitted downstream.
-        // The manifest step will derive them again from `metas`.
-        // def stages   = metas.collect { meta -> meta.input_stage }.unique().sort()
-        // def sample_ids = metas.collect { meta -> meta.id }.sort()
 
         if (metas.size() != fastqs.size()) {
             throw new IllegalArgumentException(
@@ -84,26 +67,8 @@ workflow {
 
         [batch_key, metas, fastqs]
     }
-    // Temporary view to help us inspect the semantic validation once 
-    // before creating the persistent manifest
-    // ch_valid_batches.view { batch_key, metas, fastqs ->
 
-    //     def origins  = metas.collect { it.data_origin }.unique()
-    //     def branches = metas.collect { it.workflow_branch }.unique()
-    //     def stages   = metas.collect { it.input_stage }.unique().sort()
-    //     def sample_ids = metas.collect { it.id }.sort()
-
-    //     "BATCH CHECK: " +
-    //     "dataset_id=${batch_key.dataset_id} | " +
-    //     "marker=${batch_key.marker} | " +
-    //     "n=${sample_ids.size()} | " +
-    //     "data_origin=${origins} | " +
-    //     "workflow_branch=${branches} | " +
-    //     "input_stages=${stages} | " +
-    //     "samples=${sample_ids.join(',')}"
-    // }
-
-    // Create one TSV manifest row for each validated batch
+    // Create one TSV manifest row for each validated batch -> asks: "How should this valid batch be summarized?"
     ch_batch_manifest_rows = ch_valid_batches.map { batch_key, metas, fastqs ->
 
         def origins    = metas.collect { it.data_origin }.unique().sort()
@@ -121,10 +86,64 @@ workflow {
             sample_ids.join(',')
         ].join('\t')
     }
+    // This channel is going to emit individual String values
 
     // Temporary inspection before writing the actual manifest
-    ch_batch_manifest_rows.view { row ->
-        "MANIFEST ROW: ${row}"
+    // ch_batch_manifest_rows.view { row ->
+    //     "MANIFEST ROW: ${row}"
+    // }
+
+    // Collect all manifest rows and sort them deterministically.
+    // Since every row begins with dataset_id followed by marker,
+    // normal string sorting orders first by dataset_id and then by marker.
+    ch_sorted_batch_manifest_rows = ch_batch_manifest_rows
+        .collect() 
+        // produces one channel emission containing a List -> List<String>
+        // in which each element is a String 
+        // each String is one complete TSV row
+        .map { rows -> rows.sort() }
+        // this line sorts the List<String> of complete TSV rows lexicographically
+        // `rows` is a Groovy List<String>.
+        // In which each element is one complete TSV row represented as a String.
+
+    // Build the complete batch manifest content:
+    // one header line followed by one deterministically sorted row per batch.
+    ch_batch_manifest_content = ch_sorted_batch_manifest_rows.map { rows ->
+
+        def header = [
+            'dataset_id',
+            'marker',
+            'data_origin',
+            'workflow_branch',
+            'input_stages',
+            'n_samples',
+            'samples'
+        ].join('\t')
+
+        ([header] + rows).join('\n') + '\n'
+    }
+
+    // Temporary inspection before writing the manifest file
+    // ch_sorted_batch_manifest_rows.view { rows ->
+    //     "SORTED MANIFEST ROWS:\n${rows.join('\n')}"
+    // }
+    // ch_batch_manifest_content.view { content ->
+    //     "BATCH MANIFEST CONTENT:\n${content}"
+    // }
+
+    // Persist the complete batch manifest as a workflow audit artifact.
+    ch_batch_manifest_file = ch_batch_manifest_content.collectFile(
+        name: 'batch_manifest.tsv',
+        storeDir: "${params.outdir}/pipeline_info",
+        // storeDir: "${projectDir}/results/pipeline_info",
+        sort: false,
+        newLine: false
+    )
+
+    // Inspecting the Path Object and its contents
+    ch_batch_manifest_file.view { manifest ->
+        "BATCH MANIFEST FILE: ${manifest}\n" +
+        "CONTENTS:\n${manifest.text}"
     }
 
     // Routing to a determined workflow using mode parameter
