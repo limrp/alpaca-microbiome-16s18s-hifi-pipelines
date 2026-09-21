@@ -88,18 +88,13 @@ workflow {
     }
     // This channel is going to emit individual String values
 
-    // Temporary inspection before writing the actual manifest
-    // ch_batch_manifest_rows.view { row ->
-    //     "MANIFEST ROW: ${row}"
-    // }
-
     // Collect all manifest rows and sort them deterministically.
     // Since every row begins with dataset_id followed by marker,
     // normal string sorting orders first by dataset_id and then by marker.
     ch_sorted_batch_manifest_rows = ch_batch_manifest_rows
         .collect() 
-        // produces one channel emission containing a List -> List<String>
-        // in which each element is a String 
+        // produces one channel emission containing a List
+        // in which each element is a String -> List<String>
         // each String is one complete TSV row
         .map { rows -> rows.sort() }
         // this line sorts the List<String> of complete TSV rows lexicographically
@@ -123,28 +118,13 @@ workflow {
         ([header] + rows).join('\n') + '\n'
     }
 
-    // Temporary inspection before writing the manifest file
-    // ch_sorted_batch_manifest_rows.view { rows ->
-    //     "SORTED MANIFEST ROWS:\n${rows.join('\n')}"
-    // }
-    // ch_batch_manifest_content.view { content ->
-    //     "BATCH MANIFEST CONTENT:\n${content}"
-    // }
-
     // Persist the complete batch manifest as a workflow audit artifact.
     ch_batch_manifest_file = ch_batch_manifest_content.collectFile(
         name: 'batch_manifest.tsv',
         storeDir: "${params.outdir}/pipeline_info",
-        // storeDir: "${projectDir}/results/pipeline_info",
         sort: false,
         newLine: false
     )
-
-    // Inspecting the Path Object and its contents
-    ch_batch_manifest_file.view { manifest ->
-        "BATCH MANIFEST FILE: ${manifest}\n" +
-        "CONTENTS:\n${manifest.text}"
-    }
 
     // Routing to a determined workflow using mode parameter
     if (params.mode == "benchmarking") {

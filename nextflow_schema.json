@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Alpaca amplicon benchmark - test schema",
-  "description": "Minimal nf-schema configuration for testing thesis input validation.",
+  "title": "Full-length 16S/18S HiFi benchmarking pipeline",
+  "description": "Parameter schema for the reproducible thesis benchmarking workflow.",
   "type": "object",
   "properties": {
     "mode": {

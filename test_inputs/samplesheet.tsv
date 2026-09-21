@@ -1,15 +1,21 @@
-sample	dataset_type	marker	fastq
-sim16_01	simulated	16S	test_inputs/reads/sim16_01.fastq.gz
-sim18_01	simulated	18S	test_inputs/reads/sim18_01.fastq.gz
-alpaca_y01_16S	biological	16S	test_inputs/reads/alpaca_y01_16S.fastq.gz
-alpaca_y02_16S	biological	16S	test_inputs/reads/alpaca_y02_16S.fastq.gz
-alpaca_y03_16S	biological	16S	test_inputs/reads/alpaca_y03_16S.fastq.gz
-alpaca_a01_16S	biological	16S	test_inputs/reads/alpaca_a01_16S.fastq.gz
-alpaca_a02_16S	biological	16S	test_inputs/reads/alpaca_a02_16S.fastq.gz
-alpaca_a03_16S	biological	16S	test_inputs/reads/alpaca_a03_16S.fastq.gz
-alpaca_y01_18S	biological	18S	test_inputs/reads/alpaca_y01_18S.fastq.gz
-alpaca_y02_18S	biological	18S	test_inputs/reads/alpaca_y02_18S.fastq.gz
-alpaca_y03_18S	biological	18S	test_inputs/reads/alpaca_y03_18S.fastq.gz
-alpaca_a01_18S	biological	18S	test_inputs/reads/alpaca_a01_18S.fastq.gz
-alpaca_a02_18S	biological	18S	test_inputs/reads/alpaca_a02_18S.fastq.gz
-alpaca_a03_18S	biological	18S	test_inputs/reads/alpaca_a03_18S.fastq.gz
+sample	dataset_id	data_origin	workflow_branch	marker	input_stage	fastq
+sim16_S01_R01	dummy_16S_R01	simulated	controlled	16S	analysis_ready	test_inputs/reads/sim16_S01_R01.fastq.gz
+sim16_S02_R01	dummy_16S_R01	simulated	controlled	16S	analysis_ready	test_inputs/reads/sim16_S02_R01.fastq.gz
+sim16_S01_R02	dummy_16S_R02	simulated	controlled	16S	analysis_ready	test_inputs/reads/sim16_S01_R02.fastq.gz
+sim16_S02_R02	dummy_16S_R02	simulated	controlled	16S	analysis_ready	test_inputs/reads/sim16_S02_R02.fastq.gz
+sim18_S01_R01	dummy_18S_R01	simulated	controlled	18S	analysis_ready	test_inputs/reads/sim18_S01_R01.fastq.gz
+sim18_S02_R01	dummy_18S_R01	simulated	controlled	18S	analysis_ready	test_inputs/reads/sim18_S02_R01.fastq.gz
+sim18_S01_R02	dummy_18S_R02	simulated	controlled	18S	analysis_ready	test_inputs/reads/sim18_S01_R02.fastq.gz
+sim18_S02_R02	dummy_18S_R02	simulated	controlled	18S	analysis_ready	test_inputs/reads/sim18_S02_R02.fastq.gz
+alpaca_y01_16S	dummy_alpaca_16S	simulated	biological	16S	analysis_ready	test_inputs/reads/alpaca_y01_16S.fastq.gz
+alpaca_y02_16S	dummy_alpaca_16S	simulated	biological	16S	analysis_ready	test_inputs/reads/alpaca_y02_16S.fastq.gz
+alpaca_y03_16S	dummy_alpaca_16S	simulated	biological	16S	analysis_ready	test_inputs/reads/alpaca_y03_16S.fastq.gz
+alpaca_a01_16S	dummy_alpaca_16S	simulated	biological	16S	analysis_ready	test_inputs/reads/alpaca_a01_16S.fastq.gz
+alpaca_a02_16S	dummy_alpaca_16S	simulated	biological	16S	analysis_ready	test_inputs/reads/alpaca_a02_16S.fastq.gz
+alpaca_a03_16S	dummy_alpaca_16S	simulated	biological	16S	analysis_ready	test_inputs/reads/alpaca_a03_16S.fastq.gz
+alpaca_y01_18S	dummy_alpaca_18S	simulated	biological	18S	analysis_ready	test_inputs/reads/alpaca_y01_18S.fastq.gz
+alpaca_y02_18S	dummy_alpaca_18S	simulated	biological	18S	analysis_ready	test_inputs/reads/alpaca_y02_18S.fastq.gz
+alpaca_y03_18S	dummy_alpaca_18S	simulated	biological	18S	analysis_ready	test_inputs/reads/alpaca_y03_18S.fastq.gz
+alpaca_a01_18S	dummy_alpaca_18S	simulated	biological	18S	analysis_ready	test_inputs/reads/alpaca_a01_18S.fastq.gz
+alpaca_a02_18S	dummy_alpaca_18S	simulated	biological	18S	analysis_ready	test_inputs/reads/alpaca_a02_18S.fastq.gz
+alpaca_a03_18S	dummy_alpaca_18S	simulated	biological	18S	analysis_ready	test_inputs/reads/alpaca_a03_18S.fastq.gz

@@ -12,17 +12,35 @@
         "errorMessage": "sample must start with a letter and contain only letters, numbers, or underscores",
         "meta": ["id"]
       },
-      "dataset_type": {
+      "dataset_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*$",
+        "errorMessage": "dataset_id must start with a letter and contain only letters, numbers, or underscores",
+        "meta": ["dataset_id"]
+      },
+      "data_origin": {
         "type": "string",
         "enum": ["simulated", "biological"],
-        "errorMessage": "dataset_type must be simulated or biological",
-        "meta": ["dataset_type"]
+        "errorMessage": "data_origin must be simulated or biological",
+        "meta": ["data_origin"]
+      },
+      "workflow_branch": {
+        "type": "string",
+        "enum": ["controlled", "biological"],
+        "errorMessage": "workflow_branch must be controlled or biological",
+        "meta": ["workflow_branch"]
       },
       "marker": {
         "type": "string",
         "enum": ["16S", "18S"],
         "errorMessage": "marker must be 16S or 18S",
         "meta": ["marker"]
+      },
+      "input_stage": {
+        "type": "string",
+        "enum": ["analysis_ready", "primer_present"],
+        "errorMessage": "input_stage must be analysis_ready (when primer is absent) or primer_present",
+        "meta": ["input_stage"]
       },
       "fastq": {
         "type": "string",
@@ -32,7 +50,7 @@
         "errorMessage": "fastq must point to an existing .fq.gz or .fastq.gz file with no spaces"
       }
     },
-    "required": ["sample", "dataset_type", "marker", "fastq"],
+    "required": ["sample", "dataset_id", "data_origin", "workflow_branch", "marker", "input_stage", "fastq"],
     "additionalProperties": false
   },
   "allOf": [
