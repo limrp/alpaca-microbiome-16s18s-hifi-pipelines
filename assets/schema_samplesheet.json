@@ -3,6 +3,10 @@
   "title": "Thesis sequencing samplesheet",
   "description": "Sequencing inputs for simulated and biological PacBio HiFi amplicon datasets.",
   "type": "array",
+  "minItems": 1,
+  "errorMessage": {
+    "minItems": "samplesheet must contain at least one sample row"
+  },
   "items": {
     "type": "object",
     "properties": {
@@ -51,6 +55,20 @@
       }
     },
     "required": ["sample", "dataset_id", "data_origin", "workflow_branch", "marker", "input_stage", "fastq"],
+    "allOf": [
+      {
+        "not": {
+          "properties": {
+            "data_origin": { "const": "biological" },
+            "workflow_branch": { "const": "controlled" }
+          },
+          "required": ["data_origin", "workflow_branch"]
+        },
+        "errorMessage": {
+          "not": "data_origin biological cannot be paired with workflow_branch controlled"
+        }
+      }
+    ],
     "additionalProperties": false
   },
   "allOf": [

@@ -1,0 +1,168 @@
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption
+
+def sampleColumns = ['sample', 'dataset_id', 'data_origin', 'workflow_branch', 'marker', 'input_stage', 'fastq']
+def manifestHeader = 'dataset_id\tmarker\tdata_origin\tworkflow_branch\tinput_stages\tn_samples\tsamples'
+def manifestText = { rows -> ([manifestHeader] + rows).join('\n') + '\n' }
+def canonicalManifest = manifestText([
+    'dummy_16S_R01\t16S\tsimulated\tcontrolled\tanalysis_ready\t2\tsim16_S01_R01,sim16_S02_R01',
+    'dummy_16S_R02\t16S\tsimulated\tcontrolled\tanalysis_ready\t2\tsim16_S01_R02,sim16_S02_R02',
+    'dummy_18S_R01\t18S\tsimulated\tcontrolled\tanalysis_ready\t2\tsim18_S01_R01,sim18_S02_R01',
+    'dummy_18S_R02\t18S\tsimulated\tcontrolled\tanalysis_ready\t2\tsim18_S01_R02,sim18_S02_R02',
+    'dummy_alpaca_16S\t16S\tsimulated\tbiological\tanalysis_ready\t6\talpaca_a01_16S,alpaca_a02_16S,alpaca_a03_16S,alpaca_y01_16S,alpaca_y02_16S,alpaca_y03_16S',
+    'dummy_alpaca_18S\t18S\tsimulated\tbiological\tanalysis_ready\t6\talpaca_a01_18S,alpaca_a02_18S,alpaca_a03_18S,alpaca_y01_18S,alpaca_y02_18S,alpaca_y03_18S'
+])
+
+def readSamples = { projectRoot ->
+    def lines = new File(projectRoot, 'test_inputs/samplesheet.tsv').readLines('UTF-8')
+    assert lines.first().split('\t').toList() == sampleColumns
+    lines.drop(1).collect { line ->
+        def values = line.split('\t', -1)
+        assert values.size() == sampleColumns.size()
+        def row = [sampleColumns, values.toList()].transpose().collectEntries()
+        row.fastq = new File(projectRoot, row.fastq).absolutePath
+        row
+    }
+}
+
+def cases = [
+    [name: 'Canonical samplesheet: six batches and 20 samples',
+     transform: { rows -> rows }, expected: canonicalManifest, samples: 20, batches: 6],
+    [name: 'Reversed rows: byte-identical canonical manifest',
+     transform: { rows -> rows.reverse() }, expected: canonicalManifest, samples: 20, batches: 6],
+    [name: 'Different markers within one dataset remain separate',
+     transform: { rows ->
+         def selected = [rows[0], rows[4]]
+         selected.each { row -> row.dataset_id = 'shared_dataset' }
+         selected
+     }, expected: manifestText([
+         'shared_dataset\t16S\tsimulated\tcontrolled\tanalysis_ready\t1\tsim16_S01_R01',
+         'shared_dataset\t18S\tsimulated\tcontrolled\tanalysis_ready\t1\tsim18_S01_R01'
+     ]), samples: 2, batches: 2],
+    [name: 'Same marker in different datasets remains separate',
+     transform: { rows -> [rows[0], rows[2]] }, expected: manifestText([
+         'dummy_16S_R01\t16S\tsimulated\tcontrolled\tanalysis_ready\t1\tsim16_S01_R01',
+         'dummy_16S_R02\t16S\tsimulated\tcontrolled\tanalysis_ready\t1\tsim16_S01_R02'
+     ]), samples: 2, batches: 2],
+    [name: 'Mixed origins within a batch are rejected',
+     transform: { rows ->
+         def selected = rows.take(2)
+         selected.each { row -> row.workflow_branch = 'biological' }
+         selected[1].data_origin = 'biological'
+         selected
+     }, diagnostic: 'Batch dummy_16S_R01 + 16S: multiple data_origin values found:'],
+    [name: 'Mixed branches within a batch are rejected',
+     transform: { rows ->
+         def selected = rows.take(2)
+         selected[1].workflow_branch = 'biological'
+         selected
+     }, diagnostic: 'Batch dummy_16S_R01 + 16S: multiple workflow_branch values found:'],
+    [name: 'Mixed input stages in a biological-processing batch are accepted',
+     transform: { rows ->
+        def selected = rows.take(2)
+        selected.each { row -> row.workflow_branch = 'biological' }
+        selected[0].input_stage = 'primer_present'
+        selected
+     }, expected: manifestText([
+         'dummy_16S_R01\t16S\tsimulated\tbiological\tanalysis_ready,primer_present\t2\tsim16_S01_R01,sim16_S02_R01'
+     ]), samples: 2, batches: 1],
+    [name: 'Biological origin with biological branch is accepted',
+       transform: { rows ->
+           def selected = rows.take(2)
+           selected.each { row ->
+               row.data_origin = 'biological'
+               row.workflow_branch = 'biological'
+           }
+           selected
+       }, expected: manifestText([
+           'dummy_16S_R01\t16S\tbiological\tbiological\tanalysis_ready\t2\tsim16_S01_R01,sim16_S02_R01'
+       ]), samples: 2, batches: 1],
+    [name: 'Biological origin with controlled branch is rejected',
+     transform: { rows ->
+         def selected = rows.take(1)
+         selected[0].data_origin = 'biological'
+         selected
+     }, diagnostic: 'data_origin biological cannot be paired with workflow_branch controlled'],
+    [name: 'Empty samplesheet is rejected clearly',
+     transform: { rows -> [] }, diagnostic: 'samplesheet must contain at least one sample row']
+]
+
+[
+    data_origin: 'data_origin must be simulated or biological',
+    workflow_branch: 'workflow_branch must be controlled or biological',
+    marker: 'marker must be 16S or 18S',
+    input_stage: 'input_stage must be analysis_ready (when primer is absent) or primer_present'
+].each { field, diagnostic ->
+    cases << [name: "Invalid enum: ${field}", transform: { rows ->
+        def selected = rows.take(1)
+        selected[0][field] = 'invalid_value'
+        selected
+    }, diagnostic: diagnostic]
+}
+
+sampleColumns.each { field ->
+    cases << [name: "Missing required column: ${field}", omit: field,
+              transform: { rows -> rows.take(1) }, diagnostic: "Missing required field(s): ${field}"]
+}
+
+cases << [name: 'Duplicate sample IDs are rejected across datasets', transform: { rows ->
+    def selected = [rows[0], rows[2]]
+    selected[1].sample = selected[0].sample
+    selected
+}, diagnostic: 'Detected duplicate entries: [sample:sim16_S01_R01]']
+
+cases << [name: 'Missing FASTQ is rejected', missingFastq: true,
+          transform: { rows -> rows.take(1) }, diagnostic: 'fastq must point to an existing .fq.gz or .fastq.gz file with no spaces']
+
+nextflow_pipeline {
+    name 'M03 input contracts and deterministic batch manifest'
+    script '../main.nf'
+    tag 'm03'
+
+    cases.each { scenario ->
+        test(scenario.name) {
+            when {
+                def rows = scenario.transform(readSamples(projectDir))
+                def columns = sampleColumns.findAll { column -> column != scenario.omit }
+                if (scenario.missingFastq) {
+                    def missingFile = new File(launchDir, 'does_not_exist.fastq.gz')
+                    assert !missingFile.exists()
+                    rows[0].fastq = missingFile.absolutePath
+                }
+                def samplesheet = new File(launchDir, 'samplesheet.tsv').toPath()
+                def content = ([columns.join('\t')] + rows.collect { row ->
+                    columns.collect { column -> row[column] }.join('\t')
+                }).join('\n') + '\n'
+                Files.write(samplesheet, content.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW)
+                params {
+                    input = samplesheet.toString()
+                    outdir = outputDir
+                    mode = 'benchmarking'
+                }
+            }
+
+            then {
+                def manifest = new File(outputDir, 'pipeline_info/batch_manifest.tsv')
+                if (scenario.expected != null) {
+                    assert workflow.success
+                    assert workflow.exitStatus == 0
+                    assert manifest.isFile()
+                    assert Arrays.equals(manifest.bytes, scenario.expected.getBytes(StandardCharsets.UTF_8))
+                    def records = manifest.readLines('UTF-8').drop(1)
+                    assert records.size() == scenario.batches
+                    assert records.sum { record -> record.split('\t')[5].toInteger() } == scenario.samples
+                    def members = records.collectMany { record -> record.split('\t')[6].split(',').toList() }
+                    assert members.size() == scenario.samples
+                    assert members.toSet().size() == scenario.samples
+                } else {
+                    assert workflow.failed
+                    assert workflow.exitStatus != 0
+                    def diagnostics = (workflow.stdout + workflow.stderr).join('\n')
+                    assert diagnostics.contains(scenario.diagnostic)
+                    assert !manifest.exists()
+                }
+            }
+        }
+    }
+}
